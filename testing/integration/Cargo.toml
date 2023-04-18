@@ -1,0 +1,25 @@
+[package]
+name = "integration"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { version = "1.0.63", features = ["backtrace"] }
+cid = { version = "0.8.5", default-features = false }
+fvm = { version = "3.0.0", features = ["m2-native"] }
+fvm_integration_tests = { version = "3.0.0", features = ["m2-native"] }
+fvm_ipld_blockstore = "0.1.1"
+fvm_ipld_encoding = "~0.3"
+fvm_shared = { version = "3.2.0" }
+serde = { version = "1.0", features = ["derive"] }
+serde_tuple = { version = "0.5.0" }
+frc42_dispatch = "3.0.0"
+
+[dev-dependencies]
+actors-v10 = { package = "fil_builtin_actors_bundle", git = "https://github.com/milos-ethernal/builtin-actors" }
+wat = "1.0.51"
+fil_actors_runtime = { git = "https://github.com/filecoin-project/builtin-actors", features = ["fil-actor"] }
+
+deployer-actor = { path = "../../deployer-actor" }

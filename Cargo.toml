@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "deployer-actor",
+    "hello-world-actor",
+    "testing/integration",
+]
