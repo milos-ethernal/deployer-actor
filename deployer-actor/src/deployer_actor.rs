@@ -58,8 +58,8 @@ impl DeployerActor for Actor {
     fn deploy_actor(rt: &impl Runtime, code: Vec<u8>) -> Result<(), ActorError> {
         rt.validate_immediate_caller_accept_any()?;
 
-        rt.transaction(|st: &mut State, rt| {
-            let params = RawBytes::serialize(&InstallParams { code: code.into() }).unwrap();
+        //rt.transaction(|st: &mut State, rt| {
+            let params = RawBytes::serialize(InstallParams { code: code.into() }).unwrap();
 
             let ret = extract_send_result(rt.send_simple(
                 &INIT_ACTOR_ADDR,
@@ -96,13 +96,19 @@ impl DeployerActor for Actor {
                     })?
                     .deserialize()?;
 
-                st.deployed_actor_id = ret_value.id_address;
-                st.deployed_actor_robust = ret_value.robust_address;
+                rt.transaction(|st: &mut State, _| {
+                    st.deployed_actor_id = ret_value.id_address;
+                    st.deployed_actor_robust = ret_value.robust_address;
+                    Ok(())
+                })
+                
+                //st.deployed_actor_id = ret_value.id_address;
+                //st.deployed_actor_robust = ret_value.robust_address;
             } else {
                 return Err(actor_error!(assertion_failed, "Init actor returned false"));
             }
-            Ok(())
-        })
+            //Ok(())
+        //})      
     }
 
     fn call_actor_method(rt: &impl Runtime) -> Result<String, ActorError> {
