@@ -4,7 +4,7 @@ use fil_actors_runtime::{
     ActorContext, ActorDowncast, ActorError, AsActorError, INIT_ACTOR_ADDR,
 };
 use frc42_dispatch::method_hash;
-use fvm_ipld_encoding::RawBytes;
+use fvm_ipld_encoding::{ipld_block::IpldBlock, RawBytes};
 use fvm_shared::{address::Address, econ::TokenAmount, error::ExitCode, METHOD_CONSTRUCTOR};
 use num_derive::FromPrimitive;
 use num_traits::Zero;
@@ -59,56 +59,57 @@ impl DeployerActor for Actor {
         rt.validate_immediate_caller_accept_any()?;
 
         //rt.transaction(|st: &mut State, rt| {
-            let params = RawBytes::serialize(InstallParams { code: code.into() }).unwrap();
+        let code = RawBytes::serialize(code).unwrap();
+        let params = InstallParams { code };
+
+        let ret = extract_send_result(rt.send_simple(
+            &INIT_ACTOR_ADDR,
+            4,
+            IpldBlock::serialize_cbor(&params)?,
+            TokenAmount::zero(),
+        ))
+        .context("failed to send install message to init actor".to_string())?;
+
+        let ret_value: InstallReturn = ret
+            .with_context_code(ExitCode::USR_ASSERTION_FAILED, || {
+                "return expected".to_string()
+            })?
+            .deserialize()?;
+
+        if ret_value.installed {
+            let params = RawBytes::serialize(&ExecParams {
+                code_cid: ret_value.code_cid,
+                constructor_params: RawBytes::default(),
+            })
+            .unwrap();
 
             let ret = extract_send_result(rt.send_simple(
                 &INIT_ACTOR_ADDR,
-                4,
+                2,
                 params.into(),
                 TokenAmount::zero(),
             ))
-            .context("failed to send install message to init actor".to_string())?;
+            .context("failed to send exec message to init actor".to_string())?;
 
-            let ret_value: InstallReturn = ret
+            let ret_value: ExecReturn = ret
                 .with_context_code(ExitCode::USR_ASSERTION_FAILED, || {
                     "return expected".to_string()
                 })?
                 .deserialize()?;
 
-            if ret_value.installed {
-                let params = RawBytes::serialize(&ExecParams {
-                    code_cid: ret_value.code_cid,
-                    constructor_params: RawBytes::default(),
-                })
-                .unwrap();
+            rt.transaction(|st: &mut State, _| {
+                st.deployed_actor_id = ret_value.id_address;
+                st.deployed_actor_robust = ret_value.robust_address;
+                Ok(())
+            })
 
-                let ret = extract_send_result(rt.send_simple(
-                    &INIT_ACTOR_ADDR,
-                    2,
-                    params.into(),
-                    TokenAmount::zero(),
-                ))
-                .context("failed to send exec message to init actor".to_string())?;
-
-                let ret_value: ExecReturn = ret
-                    .with_context_code(ExitCode::USR_ASSERTION_FAILED, || {
-                        "return expected".to_string()
-                    })?
-                    .deserialize()?;
-
-                rt.transaction(|st: &mut State, _| {
-                    st.deployed_actor_id = ret_value.id_address;
-                    st.deployed_actor_robust = ret_value.robust_address;
-                    Ok(())
-                })
-                
-                //st.deployed_actor_id = ret_value.id_address;
-                //st.deployed_actor_robust = ret_value.robust_address;
-            } else {
-                return Err(actor_error!(assertion_failed, "Init actor returned false"));
-            }
-            //Ok(())
-        //})      
+            //st.deployed_actor_id = ret_value.id_address;
+            //st.deployed_actor_robust = ret_value.robust_address;
+        } else {
+            return Err(actor_error!(assertion_failed, "Init actor returned false"));
+        }
+        //Ok(())
+        //})
     }
 
     fn call_actor_method(rt: &impl Runtime) -> Result<String, ActorError> {

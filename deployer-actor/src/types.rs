@@ -1,9 +1,9 @@
 use cid::Cid;
-use fvm_ipld_encoding::RawBytes;
+use fvm_ipld_encoding::{tuple::*, RawBytes};
 use fvm_shared::address::Address;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize_tuple, Deserialize_tuple)]
 pub struct InstallParams {
     pub code: RawBytes,
 }

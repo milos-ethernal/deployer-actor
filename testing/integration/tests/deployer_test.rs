@@ -1,4 +1,5 @@
 use deployer_actor::{deployer_actor::Method, WASM_BINARY as DEPLOYER_BINARY};
+use frc42_dispatch::method_hash;
 use fvm_ipld_encoding::RawBytes;
 use fvm_shared::{address::Address, bigint::Zero, econ::TokenAmount, MethodNum};
 
@@ -43,30 +44,27 @@ fn deployer_working_test() {
 
     let (mut tester, sender, ..) =
         common::init_actor_stateless(wasm_bin, actor_address, TokenAmount::zero());
+
     let mut seq: u64 = 0;
     common::deploy_actor(actor_address, RawBytes::default(), &mut tester);
 
     // Test fails here with
-    // ExitCode { value: 10 }
-    // Some(MessageBacktrace(Backtrace 
-    // { frames: 
-    //     [
-    //     Frame { 
-    //         source: 1,
-    //         method: 4,
-    //         code: ExitCode { value: 10 },
-    //         message: "fatal error" 
-    //             },
-    //     Frame { 
-    //         source: 10000,
-    //         method: 4266815605,
-    //         code: ExitCode { value: 10 },
-    //         message: "fatal error" 
-    //         }
-    //     ], 
-    // cause: Some(Fatal { 
-    //     error_msg: "[from=f1d3nehuc4u3l5mn7hazppnogf3oe6l6ymaicbkhi, to=f010000, seq=0, m=4266815605, h=0]: 
-    //     unknown import: `actor::install_actor` has not been defined" })
+    // ExitCode { value: 16 }
+    // MessageBacktrace(
+    //     Backtrace {
+    //         frames: [
+    //             Frame {
+    //                 source: 1,
+    //                 method: 4,
+    //                 code: ExitCode { value: 16 }, message: "failed to check state for installed actor: failed to install actor"
+    //             }, Frame {
+    //                 source: 10000,
+    //                 method: 4266815605,
+    //                 code: ExitCode { value: 16 }, message: "failed to send install message to init actor: send aborted with code 16"
+    //             }
+    //         ], cause: Some(Syscall { module: "actor", function: "install_actor", error: IllegalArgument, message: "failed to load actor code" })
+    //     }
+    // )
     common::send_message(
         sender,
         actor_address,
@@ -87,4 +85,29 @@ fn deployer_working_test() {
 
     let addr: Address = res.msg_receipt.return_data.deserialize().unwrap();
     assert_eq!(addr, Address::new_id(0));
+}
+
+#[test]
+fn hello_world_constructor_test() {
+    // Get wasm bin
+    let wasm_bin = HELLO_WORLD_BINARY.unwrap();
+    let actor_address = Address::new_id(10000);
+
+    let (mut tester, sender, ..) =
+        common::init_actor_stateless(wasm_bin, actor_address, TokenAmount::zero());
+
+    let mut seq: u64 = 0;
+    common::deploy_actor(actor_address, RawBytes::default(), &mut tester);
+
+    let res = common::send_message(
+        sender,
+        actor_address,
+        &mut seq,
+        method_hash!("SayHello"),
+        RawBytes::default(),
+        &mut tester,
+    );
+
+    let str: String = res.msg_receipt.return_data.deserialize().unwrap();
+    assert_eq!(str, "Hello world!".to_string());
 }

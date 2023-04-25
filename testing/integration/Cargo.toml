@@ -18,7 +18,7 @@ serde_tuple = { version = "0.5.0" }
 frc42_dispatch = "3.0.0"
 
 [dev-dependencies]
-actors-v10 = { package = "fil_builtin_actors_bundle", git = "https://github.com/milos-ethernal/builtin-actors" }
+actors-v10 = { package = "fil_builtin_actors_bundle", git = "https://github.com/milos-ethernal/builtin-actors", branch = "actor-lib-test/next" }
 wat = "1.0.51"
 fil_actors_runtime = { git = "https://github.com/filecoin-project/builtin-actors", features = ["fil-actor"] }
 
