@@ -1,3 +1,4 @@
+use cid::Cid;
 use fil_actors_runtime::{
     actor_dispatch, actor_error, extract_send_result,
     runtime::{ActorCode, Runtime},
@@ -19,6 +20,8 @@ fil_actors_runtime::wasm_trampoline!(Actor);
 pub enum Method {
     Constructor = METHOD_CONSTRUCTOR,
     CheckAddress = frc42_dispatch::method_hash!("CheckAddress"),
+    CheckCid = frc42_dispatch::method_hash!("CheckCid"),                //3711484711
+    InstallActor = frc42_dispatch::method_hash!("InstallActor"),        //1800657257
     DeployActor = frc42_dispatch::method_hash!("DeployActor"),
     CallActorMethod = frc42_dispatch::method_hash!("CallActorMethod"),
 }
@@ -28,7 +31,11 @@ pub trait DeployerActor {
 
     fn check_address(rt: &impl Runtime) -> Result<Address, ActorError>;
 
-    fn deploy_actor(rt: &impl Runtime, code: Vec<u8>) -> Result<(), ActorError>;
+    fn check_cid(rt: &impl Runtime) -> Result<String, ActorError>;
+
+    fn install_actor(rt: &impl Runtime, code: Vec<u8>) -> Result<(), ActorError>;
+
+    fn deploy_actor(rt: &impl Runtime) -> Result<(), ActorError>;
 
     fn call_actor_method(rt: &impl Runtime) -> Result<String, ActorError>;
 }
@@ -55,7 +62,14 @@ impl DeployerActor for Actor {
         Ok(st.deployed_actor_id)
     }
 
-    fn deploy_actor(rt: &impl Runtime, code: Vec<u8>) -> Result<(), ActorError> {
+    fn check_cid(rt: &impl Runtime) -> Result<String, ActorError> {
+        rt.validate_immediate_caller_accept_any()?;
+
+        let st: State = rt.state()?;
+        Ok(st.installed_actor_cid.to_string())
+    }
+
+    fn install_actor(rt: &impl Runtime, code: Vec<u8>) -> Result<(), ActorError> {
         rt.validate_immediate_caller_accept_any()?;
 
         //rt.transaction(|st: &mut State, rt| {
@@ -77,8 +91,24 @@ impl DeployerActor for Actor {
             .deserialize()?;
 
         if ret_value.installed {
+            rt.transaction(|st: &mut State, _| {
+                st.installed_actor_cid = ret_value.code_cid;
+                Ok(())
+            })?;
+        }
+
+        Ok(())
+    }
+
+    fn deploy_actor(rt: &impl Runtime) -> Result<(), ActorError> {
+        rt.validate_immediate_caller_accept_any()?;
+
+        //rt.transaction(|st: &mut State, rt| {
+        let st: State = rt.state()?;
+
+        if st.installed_actor_cid != Cid::default() {
             let params = RawBytes::serialize(&ExecParams {
-                code_cid: ret_value.code_cid,
+                code_cid: st.installed_actor_cid,
                 constructor_params: RawBytes::default(),
             })
             .unwrap();
@@ -145,6 +175,8 @@ impl ActorCode for Actor {
     actor_dispatch! {
         Constructor => constructor,
         CheckAddress => check_address,
+        CheckCid => check_cid,
+        InstallActor => install_actor,
         DeployActor => deploy_actor,
         CallActorMethod => call_actor_method,
     }
