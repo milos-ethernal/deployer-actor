@@ -172,7 +172,7 @@ pub fn send_message(
     let message = Message {
         from: sender,
         to: actor_address,
-        gas_limit: 1000000000,
+        gas_limit: i64::MAX as u64,
         method_num: method,
         sequence: *seq,
         params,

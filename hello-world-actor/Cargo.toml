@@ -13,6 +13,7 @@ frc42_dispatch = "3.0.2"
 serde = { version = "1.0.136", features = ["derive"] }
 num-traits = "0.2.14"
 num-derive = "0.3.3"
+anyhow = { version = "1.0.63", features = ["backtrace"] }
 
 [build-dependencies]
 substrate-wasm-builder = "4.0.0"
