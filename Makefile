@@ -25,3 +25,12 @@ install-toolchain:
 	rustup component add rustfmt
 	rustup component add clippy
 	rustup target add wasm32-unknown-unknown
+
+CURRENT_DIR := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
+WBUILD_DIR := $(CURRENT_DIR)target/debug/wbuild
+OUTPUT_DIR := $(CURRENT_DIR)output
+
+output: build
+	mkdir -p output
+	rm -rf $(OUTPUT_DIR)/*
+	$(foreach folder, $(wildcard $(WBUILD_DIR)/*), $(foreach file, $(wildcard $(folder)/*.compact.wasm), cp -f $(file) $(OUTPUT_DIR)))

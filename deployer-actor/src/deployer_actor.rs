@@ -19,11 +19,11 @@ fil_actors_runtime::wasm_trampoline!(Actor);
 #[repr(u64)]
 pub enum Method {
     Constructor = METHOD_CONSTRUCTOR,
-    CheckAddress = frc42_dispatch::method_hash!("CheckAddress"),
+    CheckAddress = frc42_dispatch::method_hash!("CheckAddress"),        //2881763653
     CheckCid = frc42_dispatch::method_hash!("CheckCid"),                //3711484711
     InstallActor = frc42_dispatch::method_hash!("InstallActor"),        //1800657257
-    DeployActor = frc42_dispatch::method_hash!("DeployActor"),
-    CallActorMethod = frc42_dispatch::method_hash!("CallActorMethod"),
+    DeployActor = frc42_dispatch::method_hash!("DeployActor"),          //4266815605
+    CallActorMethod = frc42_dispatch::method_hash!("CallActorMethod"),  //1343012348
 }
 
 pub trait DeployerActor {
