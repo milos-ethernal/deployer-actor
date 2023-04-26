@@ -12,7 +12,7 @@ fil_actors_runtime::wasm_trampoline!(Actor);
 #[repr(u64)]
 pub enum Method {
     Constructor = METHOD_CONSTRUCTOR,
-    SayHello = frc42_dispatch::method_hash!("SayHello"),
+    SayHello = frc42_dispatch::method_hash!("SayHello"),    //3310437020
 }
 
 pub trait HelloWorldActor {
