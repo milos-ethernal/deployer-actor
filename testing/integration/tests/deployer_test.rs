@@ -43,7 +43,7 @@ fn deployer_working_test() {
     let actor_address = Address::new_id(10000);
 
     let (mut tester, sender, ..) =
-        common::init_actor_stateless(wasm_bin, actor_address, TokenAmount::zero());
+        common::init_actor_stateless(wasm_bin, actor_address, TokenAmount::from_whole(2147483647));
 
     let mut seq: u64 = 0;
     common::deploy_actor(actor_address, RawBytes::default(), &mut tester);
@@ -99,7 +99,7 @@ fn hello_world_constructor_test() {
     let mut seq: u64 = 0;
     common::deploy_actor(actor_address, RawBytes::default(), &mut tester);
 
-    let res = common::send_message(
+    let mut res = common::send_message(
         sender,
         actor_address,
         &mut seq,
@@ -108,6 +108,18 @@ fn hello_world_constructor_test() {
         &mut tester,
     );
 
-    let str: String = res.msg_receipt.return_data.deserialize().unwrap();
+    let mut str: String = res.msg_receipt.return_data.deserialize().unwrap();
     assert_eq!(str, "Hello world!".to_string());
+
+    res = common::send_message(
+        sender,
+        actor_address,
+        &mut seq,
+        method_hash!("Increment"),
+        RawBytes::default(),
+        &mut tester,
+    );
+
+    str = res.msg_receipt.return_data.deserialize().unwrap();
+    assert_eq!(str, "Counter = 1".to_string());
 }

@@ -5,7 +5,9 @@ use fil_actors_runtime::{
 };
 use frc42_dispatch::method_hash;
 use fvm_ipld_encoding::{ipld_block::IpldBlock, RawBytes};
-use fvm_shared::{address::Address, econ::TokenAmount, error::ExitCode, METHOD_CONSTRUCTOR};
+use fvm_shared::{
+    address::Address, econ::TokenAmount, error::ExitCode, sys::SendFlags, METHOD_CONSTRUCTOR,
+};
 use num_derive::FromPrimitive;
 use num_traits::Zero;
 
@@ -18,9 +20,9 @@ fil_actors_runtime::wasm_trampoline!(Actor);
 #[repr(u64)]
 pub enum Method {
     Constructor = METHOD_CONSTRUCTOR,
-    CheckAddress = frc42_dispatch::method_hash!("CheckAddress"),
-    DeployActor = frc42_dispatch::method_hash!("DeployActor"),
-    CallActorMethod = frc42_dispatch::method_hash!("CallActorMethod"),
+    CheckAddress = frc42_dispatch::method_hash!("CheckAddress"),        //2881763653
+    DeployActor = frc42_dispatch::method_hash!("DeployActor"),          //4266815605
+    CallActorMethod = frc42_dispatch::method_hash!("CallActorMethod"),  //1343012348
 }
 
 pub trait DeployerActor {
@@ -62,11 +64,13 @@ impl DeployerActor for Actor {
         let code = RawBytes::serialize(code).unwrap();
         let params = InstallParams { code };
 
-        let ret = extract_send_result(rt.send_simple(
+        let ret = extract_send_result(rt.send(
             &INIT_ACTOR_ADDR,
             4,
             IpldBlock::serialize_cbor(&params)?,
             TokenAmount::zero(),
+            None,
+            SendFlags::empty(),
         ))
         .context("failed to send install message to init actor".to_string())?;
 
@@ -83,11 +87,13 @@ impl DeployerActor for Actor {
             })
             .unwrap();
 
-            let ret = extract_send_result(rt.send_simple(
+            let ret = extract_send_result(rt.send(
                 &INIT_ACTOR_ADDR,
                 2,
                 params.into(),
                 TokenAmount::zero(),
+                Some(100),
+                SendFlags::empty(),
             ))
             .context("failed to send exec message to init actor".to_string())?;
 
