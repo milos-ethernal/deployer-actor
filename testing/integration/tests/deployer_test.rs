@@ -43,38 +43,21 @@ fn deployer_working_test() {
     let actor_address = Address::new_id(10000);
 
     let (mut tester, sender, ..) =
-        common::init_actor_stateless(wasm_bin, actor_address, TokenAmount::zero());
-
+        //common::init_actor_stateless(wasm_bin, actor_address, TokenAmount::zero());
+        common::init_actor_stateless_with_bundle(wasm_bin, actor_address, TokenAmount::zero(),"/home/milmaks/milos-ethernal/builtin-actors/target/debug/build/fil_builtin_actors_bundle-b3eedaa45c3a001b/out/bundle/bundle.car");
     let mut seq: u64 = 0;
     common::deploy_actor(actor_address, RawBytes::default(), &mut tester);
 
-    // Test fails here with
-    // ExitCode { value: 16 }
-    // MessageBacktrace(
-    //     Backtrace {
-    //         frames: [
-    //             Frame {
-    //                 source: 1,
-    //                 method: 4,
-    //                 code: ExitCode { value: 16 }, message: "failed to check state for installed actor: failed to install actor"
-    //             }, Frame {
-    //                 source: 10000,
-    //                 method: 4266815605,
-    //                 code: ExitCode { value: 16 }, message: "failed to send install message to init actor: send aborted with code 16"
-    //             }
-    //         ], cause: Some(Syscall { module: "actor", function: "install_actor", error: IllegalArgument, message: "failed to load actor code" })
-    //     }
-    // )
     common::send_message(
         sender,
         actor_address,
         &mut seq,
         Method::DeployActor as MethodNum,
-        RawBytes::serialize(HELLO_WORLD_BINARY.unwrap()).unwrap(),
+        RawBytes::default(),
         &mut tester,
     );
 
-    let res = common::send_message(
+    let mut res = common::send_message(
         sender,
         actor_address,
         &mut seq,
@@ -83,8 +66,30 @@ fn deployer_working_test() {
         &mut tester,
     );
 
-    let addr: Address = res.msg_receipt.return_data.deserialize().unwrap();
-    assert_eq!(addr, Address::new_id(0));
+    let hello_world_addr: Address = res.msg_receipt.return_data.deserialize().unwrap();
+    assert_ne!(hello_world_addr, Address::new_id(0));
+
+    res = common::send_message(
+        sender,
+        actor_address,
+        &mut seq,
+        Method::CallActorMethod as MethodNum,
+        RawBytes::default(),
+        &mut tester,
+    );
+
+    assert_eq!("Hello world!".to_string(), res.msg_receipt.return_data.deserialize::<String>().unwrap());
+
+    res = common::send_message(
+        sender,
+        hello_world_addr,
+        &mut seq,
+        method_hash!("SayHello"),
+        RawBytes::default(),
+        &mut tester,
+    );
+
+    assert_eq!("Hello world!".to_string(), res.msg_receipt.return_data.deserialize::<String>().unwrap());
 }
 
 #[test]

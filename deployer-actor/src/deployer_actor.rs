@@ -19,11 +19,11 @@ fil_actors_runtime::wasm_trampoline!(Actor);
 #[repr(u64)]
 pub enum Method {
     Constructor = METHOD_CONSTRUCTOR,
-    CheckAddress = frc42_dispatch::method_hash!("CheckAddress"),        //2881763653
-    CheckCid = frc42_dispatch::method_hash!("CheckCid"),                //3711484711
-    InstallActor = frc42_dispatch::method_hash!("InstallActor"),        //1800657257
-    DeployActor = frc42_dispatch::method_hash!("DeployActor"),          //4266815605
-    CallActorMethod = frc42_dispatch::method_hash!("CallActorMethod"),  //1343012348
+    CheckAddress = frc42_dispatch::method_hash!("CheckAddress"), //2881763653
+    CheckCid = frc42_dispatch::method_hash!("CheckCid"),         //3711484711
+    InstallActor = frc42_dispatch::method_hash!("InstallActor"), //1800657257
+    DeployActor = frc42_dispatch::method_hash!("DeployActor"),   //4266815605
+    CallActorMethod = frc42_dispatch::method_hash!("CallActorMethod"), //1343012348
 }
 
 pub trait DeployerActor {
@@ -107,16 +107,15 @@ impl DeployerActor for Actor {
         let st: State = rt.state()?;
 
         if st.installed_actor_cid != Cid::default() {
-            let params = RawBytes::serialize(&ExecParams {
+            let params = ExecParams {
                 code_cid: st.installed_actor_cid,
                 constructor_params: RawBytes::default(),
-            })
-            .unwrap();
+            };
 
             let ret = extract_send_result(rt.send_simple(
                 &INIT_ACTOR_ADDR,
                 2,
-                params.into(),
+                IpldBlock::serialize_cbor(&params)?,
                 TokenAmount::zero(),
             ))
             .context("failed to send exec message to init actor".to_string())?;
