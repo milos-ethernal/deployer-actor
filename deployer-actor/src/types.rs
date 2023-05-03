@@ -22,7 +22,7 @@ pub struct ExecParams {
 }
 
 /// Init actor Exec Return value
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize_tuple, Deserialize_tuple)]
 pub struct ExecReturn {
     /// ID based address for created actor
     pub id_address: Address,
